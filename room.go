@@ -19,6 +19,16 @@ type room struct {
 	clients map[*client]bool
 }
 
+//newRoom makes a new room
+func newRoom() *room {
+	return &room{
+		forward: make(chan []byte),
+		join:    make(chan *client),
+		leave:   make(chan *client),
+		clients: make(map[*client]bool),
+	}
+}
+
 func (r *room) run() {
 	for {
 		select {
@@ -43,6 +53,7 @@ const (
 	messageBufferSize = 256
 )
 
+//upgrade the http connection
 var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize,
 	WriteBufferSize: socketBufferSize}
 
@@ -59,6 +70,7 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	r.join <- client
 	defer func() { r.leave <- client }()
+	//other goroutine
 	go client.write()
 	client.read()
 }
